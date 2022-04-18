@@ -23,3 +23,29 @@ class Hammer(Tool):
     def action(self):
         super().action()
         print("бам-бам")
+
+
+class Robot:
+    def __init__(self, name) -> None:
+        self.name = name
+        self.tool = None
+
+    def setup_tool(self, tool):
+        if self.tool:
+            print(f"Уже установлен интрумент: {self.name}")
+        else:
+            self.tool = tool
+
+    def drop_tool(self):
+        if not self.tool:
+            print("Не один инструмент не установлен")
+        else:
+            tool = self.tool
+            self.tool = None
+            return tool
+
+    def action(self):
+        if not self.tool:
+            print("Нечем работать")
+        else:
+            self.tool.action()
