@@ -1,3 +1,6 @@
+from random import shuffle, randint
+
+
 class MarginOfSafetyException(Exception):
     pass
 
@@ -14,12 +17,16 @@ class Tool:
     def action(self):
         if self.margin_of_safety < 0:
             self.margin_of_safety = 0
-            self.__is_still_work()
+        self.display()
+        self.__is_still_work()
         self.margin_of_safety -= 10
 
     def __is_still_work(self):
         if self.margin_of_safety == 0:
             raise MarginOfSafetyException(f"Инструмент {self.name} изношен")
+
+    def display(self):
+        print(f"Название: {self.name}...прочность: {self.margin_of_safety}")
 
 
 class Saw(Tool):
@@ -45,6 +52,7 @@ class Robot:
         self.name = name
         self.tools_slots = []
         self.tools_slots_count = tools_slots_count
+        print(f"Имя робота: {self.name} - слотов: {self.tools_slots_count}")
 
     def setup_tool(self, tool):
         if self.tools_slots_count:
@@ -74,17 +82,35 @@ class Robot:
 saw = Saw("pila")
 drill = Drill("drel")
 hammer = Hammer("Molotok")
-robot = Robot("Vasya")
+saw2 = Saw("pila2")
+drill2 = Drill("drel2")
+hammer2 = Hammer("Molotok2")
 
-tools = [saw, drill, hammer]
+
+robot = Robot("Vasya", randint(1,4))
+
+tools = [saw, drill, hammer, saw2, drill2, hammer2]
+shuffle(tools)
 
 for tool in tools:
-    robot.setup_tool(tool)
-    for _ in range(11):
-        try:
-            robot.action()
-        except MarginOfSafetyException as e:
-            print(e)
-            robot.drop_tool()
-            break
-    robot.drop_tool()
+    try:
+        robot.setup_tool(tool)
+    except SlotsCountException as e:
+        print(e)
+        break
+
+while robot.tools_slots:
+    robot.action()
+
+
+
+# for tool in tools:
+#     robot.setup_tool(tool)
+#     for _ in range(11):
+#         try:
+#             robot.action()
+#         except MarginOfSafetyException as e:
+#             print(e)
+#             robot.drop_tool()
+#             break
+#     robot.drop_tool()
