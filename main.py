@@ -13,18 +13,26 @@ class WeightException(Exception):
     pass
 
 
+class RobotPowerException(Exception):
+    pass
+
+
 class Tool:
     def __init__(self, name, weight, margin_of_safety=100) -> None:
         self.name = name
         self.weight = weight
         self.margin_of_safety = margin_of_safety
+        self.standart_break_amount = 10
 
-    def action(self):
+    def get_break_amount(self, accuracy):
+        return self.standart_break_amount - (self.standart_break_amount / 100) * accuracy
+
+    def action(self, accuracy):
         if self.margin_of_safety < 0:
             self.margin_of_safety = 0
         self.display()
         self.__is_still_work()
-        self.margin_of_safety -= 10
+        self.margin_of_safety -= self.get_break_amount(accuracy)
 
     def __is_still_work(self):
         if self.margin_of_safety == 0:
@@ -35,30 +43,35 @@ class Tool:
 
 
 class Saw(Tool):
-    def action(self):
+    def action(self, accuracy):
         print("взззззвзззз")
-        super().action()
+        super().action(accuracy)
 
 
 class Drill(Tool):
-    def action(self):
-        print("дрдрддррр")
-        super().action()
+    def action(self, accuracy):
+        if randint(1, 5) == 2:
+            print(f"{self.name} замкнула.")
+            self.margin_of_safety = 0
+        else:
+            print("дрдрддррр")
+        super().action(accuracy)
 
 
 class Hammer(Tool):
-    def action(self):
+    def action(self, accuracy):
         print("бам-бам")
-        super().action()
+        super().action(accuracy)
 
 
 class Robot:
-    def __init__(self, name, tools_slots_count) -> None:
+    def __init__(self, name, tools_slots_count, power) -> None:
         self.name = name
         self.tools_slots = []
         self.tools_slots_count = tools_slots_count
-        self.weight_limit = randint(1, 30)
-        print(f"Имя робота: {self.name} - слотов: {self.tools_slots_count}")
+        self.weight_limit = randint(10, 30)
+        self.power = power
+        print(f"Имя робота: {self.name} - слотов: {self.tools_slots_count} - лимит по весу: {self.weight_limit}")
 
     def setup_tool(self, tool):
         if self.weight_limit - tool.weight < 0:
@@ -68,7 +81,7 @@ class Robot:
             self.tools_slots_count -= 1
             self.weight_limit -= tool.weight
         else:
-            raise SlotsCountException("Слоты заклнчились")
+            raise SlotsCountException("Слоты закончились")
 
     def drop_tool(self, tool):
         if tool:
@@ -77,30 +90,33 @@ class Robot:
             print("Нет такого инструмента")
 
     def action(self):
+        if not self.power:
+            raise RobotPowerException("У робота сели батарейки")
         if not self.tools_slots:
             print("Нечем работать")
         else:
             for tool in self.tools_slots:
                 try:
-                    tool.action()
+                    tool.action(self.power // 10)
+                    self.power -= 20
                 except MarginOfSafetyException as e:
                     print(e)
                     self.drop_tool(tool)
 
 
 saw = Saw("pila", randint(3, 10), randint(80, 120))
-drill = Drill("drel", randint(3, 1010), randint(80, 120))
+drill = Drill("drel", randint(3, 10), randint(80, 120))
 hammer = Hammer("Molotok", randint(3, 10), randint(80, 120))
 saw2 = Saw("pila2", randint(3, 10), randint(80, 120))
 drill2 = Drill("drel2", randint(3, 10), randint(80, 120))
 hammer2 = Hammer("Molotok2", randint(3, 10), randint(80, 120))
 
-robot = Robot("Vasya", randint(1, 4))
+robot = Robot("Vasya", randint(1, 4), 500)
 
 tools = [saw, drill, hammer, saw2, drill2, hammer2]
 shuffle(tools)
 
-while robot.tools_slots_count or tools:
+while robot.tools_slots_count and tools:
     tool = tools.pop(randint(0, len(tools) - 1))
     try:
         robot.setup_tool(tool)
@@ -109,7 +125,10 @@ while robot.tools_slots_count or tools:
         break
     except WeightException as e:
         print(e)
-        break
 
 while robot.tools_slots:
-    robot.action()
+    try:
+        robot.action()
+    except RobotPowerException as e:
+        print(e)
+        break
